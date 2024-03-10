@@ -6,9 +6,13 @@ namespace EventsWithDeviceTemperatureApplication;
 
 static class Factory
 {
+    private const double WARNING_TEMPERATURE_LIMIT = 27;
+    private const double EMERGENCY_TEMPERATURE_LIMIT = 75;
     public static void Start()
     {
-        
+        IThermoStat thermoStat = new ThermoStat(WARNING_TEMPERATURE_LIMIT,EMERGENCY_TEMPERATURE_LIMIT);
+        IDevice device = new Device(thermoStat);
+        device.StartDevice();
     }
 }
 
@@ -26,6 +30,7 @@ class Device : IDevice
     }
     public void StartDevice()
     {
+        this.thermoStat.TurnOnHeatingSensor();
         Console.WriteLine("Device is running");
     }
 }
