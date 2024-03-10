@@ -52,13 +52,29 @@ class CoolingMechanism : ICoolingMechanism
 //ThermoStat class and interface
 interface IThermoStat
 {
+    void TurnOnHeatingSensor();
+}
 
+class ThermoStat : IThermoStat
+{
+    public void TurnOnHeatingSensor()
+    {
+
+    }
 }
 
 //HeatingSensor class and interface (with relevant event declarations with event list
 interface IHeatingSensor
 {
+    void MonitorTemperature();
+}
 
+class HeatingSensor : IHeatingSensor
+{
+    public void MonitorTemperature()
+    {
+
+    }
 }
 
 public class Program{
