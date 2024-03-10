@@ -57,9 +57,18 @@ interface IThermoStat
 
 class ThermoStat : IThermoStat
 {
+    private double warningTemperatureLimit;
+    private double emergencyTemperatureLimit;
+    public ThermoStat(double warningTemperatureLimit, double emergencyTemperatureLimit)
+    {
+        this.warningTemperatureLimit = warningTemperatureLimit;
+        this.emergencyTemperatureLimit = emergencyTemperatureLimit;
+    }
     public void TurnOnHeatingSensor()
     {
-
+        ICoolingMechanism coolingMechanism = new CoolingMechanism();
+        IHeatingSensor heatingSensor = new HeatingSensor(coolingMechanism, this.warningTemperatureLimit, this.emergencyTemperatureLimit);
+        heatingSensor.MonitorTemperature();
     }
 }
 
