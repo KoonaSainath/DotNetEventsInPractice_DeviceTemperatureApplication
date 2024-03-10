@@ -101,7 +101,7 @@ class HeatingSensor : IHeatingSensor
     private ICoolingMechanism coolingMechanism;
     private double warningTemperatureLimit;
     private double emergencyTemperatureLimit;
-    private double[] temperatureData;
+    private double[] temperatureValues;
     #region getters and setters
     #region CoolingMechanism property with custom getter and setter
     public ICoolingMechanism CoolingMechanism
@@ -206,12 +206,13 @@ class HeatingSensor : IHeatingSensor
         }
     }
     #endregion
+    private bool ExceededWarningLimit = false;
     public HeatingSensor(ICoolingMechanism coolingMechanism, double warningTemperatureLimit, double emergencyTemperatureLimit)
     {
         this.coolingMechanism = coolingMechanism;
         this.warningTemperatureLimit = warningTemperatureLimit;
         this.emergencyTemperatureLimit = emergencyTemperatureLimit;
-        this.temperatureData = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
+        this.temperatureValues = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
     }
     public void FireEventWarningLimitExceeded(TemperatureData temperatureData)
     {
@@ -239,7 +240,33 @@ class HeatingSensor : IHeatingSensor
     }
     public void MonitorTemperature()
     {
-
+        foreach(double temperature in temperatureValues)
+        {
+            TemperatureData temperatureData = new TemperatureData()
+            {
+                CurrentTemperature = temperature,
+                CurrentDateTime = DateTime.Now
+            };
+            if(temperature >= this.emergencyTemperatureLimit)
+            {
+                FireEventEmergencyLimitExceeded(temperatureData);
+            }
+            else if(temperature >= this.warningTemperatureLimit)
+            {
+                ExceededWarningLimit = true;
+                FireEventWarningLimitExceeded(temperatureData);
+            }
+            //Checking if temperature is below warning limit and if this is after warning limit is reached, to fire event to end cooling mechanism.
+            else if(temperature < this.warningTemperatureLimit && ExceededWarningLimit)
+            {
+                ExceededWarningLimit = false;
+                FireEventTemperatureBelowWarningLimit(temperatureData);
+            }
+            else
+            {
+                Console.WriteLine($"Current temperature is: {temperatureData.CurrentTemperature} at {temperatureData.CurrentDateTime}");
+            }
+        }
     }
 }
 
