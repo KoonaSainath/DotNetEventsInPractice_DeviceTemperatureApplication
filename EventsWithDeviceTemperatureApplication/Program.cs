@@ -2,6 +2,19 @@
 
 //Device class and interface
 
+interface IDevice
+{
+    void StartDevice();
+}
+
+class Device : IDevice
+{
+    public void StartDevice()
+    {
+        Console.WriteLine("Device is running");
+    }
+}
+
 //CoolingMechanism class and interface
 
 //ThermoStat class and interface
@@ -11,6 +24,11 @@
 public class Program{
     public static void Main(string[] args){
         Console.WriteLine("Press any key to run the device.");
+        Console.ReadKey();
+
+        IDevice device = new Device();
+        device.StartDevice();
+
         Console.ReadKey();
     }
 }
