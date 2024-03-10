@@ -33,7 +33,20 @@ class Device : IDevice
 //CoolingMechanism class and interface
 interface ICoolingMechanism
 {
+    void On();
+    void Off();
+}
 
+class CoolingMechanism : ICoolingMechanism
+{
+    public void On()
+    {
+        Console.WriteLine("Cooling mechanism turned 'ON'");
+    }
+    public void Off()
+    {
+        Console.WriteLine("Cooling mechanism turned 'OFF'");
+    }
 }
 
 //ThermoStat class and interface
