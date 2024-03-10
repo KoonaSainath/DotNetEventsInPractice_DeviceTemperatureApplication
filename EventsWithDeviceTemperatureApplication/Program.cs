@@ -213,6 +213,30 @@ class HeatingSensor : IHeatingSensor
         this.emergencyTemperatureLimit = emergencyTemperatureLimit;
         this.temperatureData = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
     }
+    public void FireEventWarningLimitExceeded(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForEventWarningLimitExceeded] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
+    }
+    public void FireEventEmergencyLimitExceeded(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForEventEmergencyLimitExceeded] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
+    }
+    public void FireEventTemperatureBelowWarningLimit(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForTemperatureBelowWarningLimit] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
+    }
     public void MonitorTemperature()
     {
 
