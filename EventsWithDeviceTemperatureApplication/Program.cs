@@ -66,11 +66,66 @@ class ThermoStat : IThermoStat
 //HeatingSensor class and interface (with relevant event declarations with event list
 interface IHeatingSensor
 {
+    double WarningTemperatureLimit { get; }
+    double EmergencyTemperatureLimit { get; }
+    ICoolingMechanism CoolingMechanism { get; }
     void MonitorTemperature();
 }
 
 class HeatingSensor : IHeatingSensor
 {
+    private ICoolingMechanism coolingMechanism;
+    private double warningTemperatureLimit;
+    private double emergencyTemperatureLimit;
+    private double[] temperatureData;
+    #region getters and setters
+    #region CoolingMechanism property with custom getter and setter
+    public ICoolingMechanism CoolingMechanism
+    {
+        get
+        {
+            return this.coolingMechanism;
+        }
+        set
+        {
+            this.coolingMechanism = value;
+        }
+    }
+    #endregion
+    #region WarningTemperatureLimit property with custom getter and setter
+    public double WarningTemperatureLimit
+    {
+        get
+        {
+            return this.warningTemperatureLimit;
+        }
+        set
+        {
+            this.warningTemperatureLimit = value;
+        }
+    }
+    #endregion
+    #region EmergencyTemperatureLimit property with custom getter and setter
+    public double EmergencyTemperatureLimit
+    {
+        get
+        {
+            return this.emergencyTemperatureLimit;
+        }
+        set
+        {
+            this.emergencyTemperatureLimit = value;
+        }
+    }
+    #endregion
+    #endregion
+    public HeatingSensor(ICoolingMechanism coolingMechanism, double warningTemperatureLimit, double emergencyTemperatureLimit)
+    {
+        this.coolingMechanism = coolingMechanism;
+        this.warningTemperatureLimit = warningTemperatureLimit;
+        this.emergencyTemperatureLimit = emergencyTemperatureLimit;
+        this.temperatureData = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
+    }
     public void MonitorTemperature()
     {
 
