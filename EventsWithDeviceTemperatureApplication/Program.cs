@@ -3,15 +3,19 @@ using System.Runtime.CompilerServices;
 
 namespace EventsWithDeviceTemperatureApplication;
 
-//Device class and interface
-
+class TemperatureData : EventArgs
+{
+    public double CurrentTemperature { get; set; }
+    public DateTime CurrentDateTime { get; set; }
+}
 static class Factory
 {
     private const double WARNING_TEMPERATURE_LIMIT = 27;
     private const double EMERGENCY_TEMPERATURE_LIMIT = 75;
     public static void Start()
     {
-        IThermoStat thermoStat = new ThermoStat(WARNING_TEMPERATURE_LIMIT,EMERGENCY_TEMPERATURE_LIMIT);
+        ICoolingMechanism coolingMechanism = new CoolingMechanism();
+        IThermoStat thermoStat = new ThermoStat(WARNING_TEMPERATURE_LIMIT,EMERGENCY_TEMPERATURE_LIMIT, coolingMechanism);
         IDevice device = new Device(thermoStat);
         device.StartDevice();
     }
@@ -31,8 +35,8 @@ class Device : IDevice
     }
     public void StartDevice()
     {
-        this.thermoStat.TurnOnHeatingSensor();
         Console.WriteLine("Device is running");
+        this.thermoStat.TurnOnHeatingSensor();
     }
 }
 
@@ -47,10 +51,12 @@ class CoolingMechanism : ICoolingMechanism
 {
     public void On()
     {
+        Console.WriteLine("Temperature exceeded warning limit!");
         Console.WriteLine("Cooling mechanism turned 'ON'");
     }
     public void Off()
     {
+        Console.WriteLine("Temperature got under control. Now temperature is under the warning limit! Great!!");
         Console.WriteLine("Cooling mechanism turned 'OFF'");
     }
 }
@@ -58,23 +64,80 @@ class CoolingMechanism : ICoolingMechanism
 //ThermoStat class and interface
 interface IThermoStat
 {
+    ICoolingMechanism CoolingMechanism { get; }
     void TurnOnHeatingSensor();
+    void SubscribeToHeatingSensorEvents(IHeatingSensor heatingSensor);
 }
 
 class ThermoStat : IThermoStat
 {
     private double warningTemperatureLimit;
     private double emergencyTemperatureLimit;
-    public ThermoStat(double warningTemperatureLimit, double emergencyTemperatureLimit)
+    private ICoolingMechanism coolingMechanism;
+    #region CoolingMechanism property getter and setter
+    public ICoolingMechanism CoolingMechanism
+    {
+        get
+        {
+            return coolingMechanism;
+        }
+        set
+        {
+            this.coolingMechanism = value;
+        }
+    }
+    #endregion
+    public ThermoStat(double warningTemperatureLimit, double emergencyTemperatureLimit, ICoolingMechanism coolingMechanism)
     {
         this.warningTemperatureLimit = warningTemperatureLimit;
         this.emergencyTemperatureLimit = emergencyTemperatureLimit;
+        this.coolingMechanism = coolingMechanism;
     }
     public void TurnOnHeatingSensor()
     {
-        ICoolingMechanism coolingMechanism = new CoolingMechanism();
-        IHeatingSensor heatingSensor = new HeatingSensor(coolingMechanism, this.warningTemperatureLimit, this.emergencyTemperatureLimit);
+        IHeatingSensor heatingSensor = new HeatingSensor(this.warningTemperatureLimit, this.emergencyTemperatureLimit);
+        SubscribeToHeatingSensorEvents(heatingSensor);
         heatingSensor.MonitorTemperature();
+    }
+    public void SubscribeToHeatingSensorEvents(IHeatingSensor heatingSensor)
+    {
+        //subscribing to relevant events
+        heatingSensor.EventWarningLimitExceeded += HeatingSensor_EventWarningLimitExceeded;
+        heatingSensor.EventEmergencyLimitExceeded += HeatingSensor_EventEmergencyLimitExceeded;
+        heatingSensor.EventTemperatureBelowWarningLimit += HeatingSensor_EventTemperatureBelowWarningLimit;
+    }
+    private void HeatingSensor_EventWarningLimitExceeded(object? sender, TemperatureData e)
+    {
+        Console.ResetColor();
+        Console.BackgroundColor = ConsoleColor.Yellow;
+        Console.ForegroundColor = ConsoleColor.Black;
+
+        //turning on cooling mechanism
+        this.coolingMechanism.On();
+        Console.ResetColor();
+    }
+
+    private void HeatingSensor_EventEmergencyLimitExceeded(object? sender, TemperatureData e)
+    {
+        Console.ResetColor();
+        Console.BackgroundColor = ConsoleColor.Red;
+        Console.ForegroundColor = ConsoleColor.Black;
+
+        Console.WriteLine("Emergency level exceeded!! Shutting the device down!");
+
+        Console.ResetColor();
+    }
+
+
+    private void HeatingSensor_EventTemperatureBelowWarningLimit(object? sender, TemperatureData e)
+    {
+        Console.ResetColor();
+        Console.BackgroundColor = ConsoleColor.Gray;
+        Console.ForegroundColor = ConsoleColor.Black;
+
+        //turning off cooling mechanism
+        this.coolingMechanism.Off();
+        Console.ResetColor();
     }
 }
 
@@ -83,39 +146,18 @@ interface IHeatingSensor
 {
     double WarningTemperatureLimit { get; }
     double EmergencyTemperatureLimit { get; }
-    ICoolingMechanism CoolingMechanism { get; }
     void MonitorTemperature();
     event EventHandler<TemperatureData> EventWarningLimitExceeded;
     event EventHandler<TemperatureData> EventEmergencyLimitExceeded;
     event EventHandler<TemperatureData> EventTemperatureBelowWarningLimit;
 }
 
-class TemperatureData : EventArgs
-{
-    public double CurrentTemperature { get; set; }
-    public DateTime CurrentDateTime { get; set; } 
-}
-
 class HeatingSensor : IHeatingSensor
 {
-    private ICoolingMechanism coolingMechanism;
     private double warningTemperatureLimit;
     private double emergencyTemperatureLimit;
-    private double[] temperatureData;
+    private double[] temperatureValues;
     #region getters and setters
-    #region CoolingMechanism property with custom getter and setter
-    public ICoolingMechanism CoolingMechanism
-    {
-        get
-        {
-            return this.coolingMechanism;
-        }
-        set
-        {
-            this.coolingMechanism = value;
-        }
-    }
-    #endregion
     #region WarningTemperatureLimit property with custom getter and setter
     public double WarningTemperatureLimit
     {
@@ -206,16 +248,64 @@ class HeatingSensor : IHeatingSensor
         }
     }
     #endregion
-    public HeatingSensor(ICoolingMechanism coolingMechanism, double warningTemperatureLimit, double emergencyTemperatureLimit)
+    private bool ExceededWarningLimit = false;
+    public HeatingSensor(double warningTemperatureLimit, double emergencyTemperatureLimit)
     {
-        this.coolingMechanism = coolingMechanism;
         this.warningTemperatureLimit = warningTemperatureLimit;
         this.emergencyTemperatureLimit = emergencyTemperatureLimit;
-        this.temperatureData = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
+        this.temperatureValues = [2,3,5,6,8.5,9,10.8,12.6,17,18.9,25.1,26.9,27.2,28,35,31.2,25,28,23,27.5,35,42,57,83.8];
+    }
+    public void FireEventWarningLimitExceeded(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForEventWarningLimitExceeded] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
+    }
+    public void FireEventEmergencyLimitExceeded(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForEventEmergencyLimitExceeded] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
+    }
+    public void FireEventTemperatureBelowWarningLimit(TemperatureData temperatureData)
+    {
+        EventHandler<TemperatureData> handler = temperatureEventsList[KeyForTemperatureBelowWarningLimit] as EventHandler<TemperatureData>;
+        if(handler is not null)
+        {
+            handler(this, temperatureData);
+        }
     }
     public void MonitorTemperature()
     {
-
+        foreach(double temperature in temperatureValues)
+        {
+            TemperatureData temperatureData = new TemperatureData()
+            {
+                CurrentTemperature = temperature,
+                CurrentDateTime = DateTime.Now
+            };
+            Console.WriteLine($"Current temperature is: {temperatureData.CurrentTemperature} at {temperatureData.CurrentDateTime}");
+            if (temperature >= this.emergencyTemperatureLimit)
+            {
+                FireEventEmergencyLimitExceeded(temperatureData);
+            }
+            else if(temperature >= this.warningTemperatureLimit)
+            {
+                ExceededWarningLimit = true;
+                FireEventWarningLimitExceeded(temperatureData);
+            }
+            //Checking if temperature is below warning limit and if this is after warning limit is reached, to fire event to end cooling mechanism.
+            else if(temperature < this.warningTemperatureLimit && ExceededWarningLimit)
+            {
+                ExceededWarningLimit = false;
+                FireEventTemperatureBelowWarningLimit(temperatureData);
+            }
+            Thread.Sleep(1000);
+        }
     }
 }
 
