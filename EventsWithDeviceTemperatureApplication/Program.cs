@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace EventsWithDeviceTemperatureApplication;
 
@@ -84,7 +85,9 @@ interface IHeatingSensor
     double EmergencyTemperatureLimit { get; }
     ICoolingMechanism CoolingMechanism { get; }
     void MonitorTemperature();
-    
+    event EventHandler<TemperatureData> EventWarningLimitExceeded;
+    event EventHandler<TemperatureData> EventEmergencyLimitExceeded;
+    event EventHandler<TemperatureData> EventTemperatureBelowWarningLimit;
 }
 
 class TemperatureData : EventArgs
@@ -139,6 +142,69 @@ class HeatingSensor : IHeatingSensor
         }
     }
     #endregion
+    #endregion
+
+    //EventHandlerList holds multiple events in list datastructure with key objects and event values.
+    private EventHandlerList temperatureEventsList = new EventHandlerList();
+
+    private object KeyForEventWarningLimitExceeded = new object();
+    private object KeyForEventEmergencyLimitExceeded = new object();
+    private object KeyForTemperatureBelowWarningLimit = new object();
+    #region Declared events
+    public event EventHandler<TemperatureData> EventWarningLimitExceeded
+    {
+        //Executes when calling code subscribes to this event
+        add
+        {
+            //First parameter is "key" and second parameter is "value"
+            //Key is the object we specifically declared for this event
+            //"value" is passed directly when calling code subscribes to this event. When calling code subscribes to this event, code knows what event it is subscribing to, and passes that event to "value".
+            temperatureEventsList.AddHandler(KeyForEventWarningLimitExceeded, value);
+        }
+        //Executes when calling code unsubscribes to this event
+        remove
+        {
+            //Removing the event from the EventHandlerList.
+            //Gets executed only when calling code unsubscribes from this event.
+            temperatureEventsList.RemoveHandler(KeyForEventWarningLimitExceeded, value);
+        }
+    }
+    public event EventHandler<TemperatureData> EventEmergencyLimitExceeded
+    {
+        //Executes when calling code subscribes to this event
+        add
+        {
+            //First parameter is "Key" and second parameter is "value"
+            //Key is the object we specifically declared for this event
+            //"value" is passed directly when calling code subscribes to this event. When calling code subscribes to this event, code knows what event it is subscribing to, and passes that event to "value".
+            temperatureEventsList.AddHandler(KeyForEventEmergencyLimitExceeded, value);
+        }
+        //Executes when calling code unsubscribes to this event
+        remove
+        {
+            //Removing the event from the EventHandlerList.
+            //Gets executed only when calling code unsubscribes from this event.
+            temperatureEventsList.RemoveHandler(KeyForEventEmergencyLimitExceeded, value);
+        }
+    }
+    public event EventHandler<TemperatureData> EventTemperatureBelowWarningLimit
+    {
+        //Executes when calling code subscribes to this event
+        add
+        {
+            //First parameter is "Key" and second parameter is "value".
+            //Key is the object we specifically declared for this event.
+            //"value" is passed directly when calling code subscribes to this event. When calling code subscribes to this event, code knows what event it is subscribing to, and passes that event to "value"
+            temperatureEventsList.AddHandler(KeyForTemperatureBelowWarningLimit, value);
+        }
+        //Executes when calling code unsubscribes to this event
+        remove
+        {
+            //Removing the event from the EventHandlerList.
+            //Gets executed only when calling code unsubscribes from this event
+            temperatureEventsList.RemoveHandler(KeyForTemperatureBelowWarningLimit, value);
+        }
+    }
     #endregion
     public HeatingSensor(ICoolingMechanism coolingMechanism, double warningTemperatureLimit, double emergencyTemperatureLimit)
     {
