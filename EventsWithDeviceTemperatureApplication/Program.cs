@@ -84,6 +84,13 @@ interface IHeatingSensor
     double EmergencyTemperatureLimit { get; }
     ICoolingMechanism CoolingMechanism { get; }
     void MonitorTemperature();
+    
+}
+
+class TemperatureData : EventArgs
+{
+    public double CurrentTemperature { get; set; }
+    public DateTime CurrentDateTime { get; set; } 
 }
 
 class HeatingSensor : IHeatingSensor
