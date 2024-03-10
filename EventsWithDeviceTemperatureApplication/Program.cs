@@ -1,6 +1,16 @@
-﻿namespace EventsWithDeviceTemperatureApplication;
+﻿using System.Runtime.CompilerServices;
+
+namespace EventsWithDeviceTemperatureApplication;
 
 //Device class and interface
+
+static class Factory
+{
+    public static void Start()
+    {
+        
+    }
+}
 
 interface IDevice
 {
@@ -9,6 +19,11 @@ interface IDevice
 
 class Device : IDevice
 {
+    private IThermoStat thermoStat;
+    public Device(IThermoStat thermoStat)
+    {
+        this.thermoStat = thermoStat;
+    }
     public void StartDevice()
     {
         Console.WriteLine("Device is running");
@@ -16,18 +31,29 @@ class Device : IDevice
 }
 
 //CoolingMechanism class and interface
+interface ICoolingMechanism
+{
+
+}
 
 //ThermoStat class and interface
+interface IThermoStat
+{
+
+}
 
 //HeatingSensor class and interface (with relevant event declarations with event list
+interface IHeatingSensor
+{
+
+}
 
 public class Program{
     public static void Main(string[] args){
         Console.WriteLine("Press any key to run the device.");
         Console.ReadKey();
 
-        IDevice device = new Device();
-        device.StartDevice();
+        Factory.Start();
 
         Console.ReadKey();
     }
